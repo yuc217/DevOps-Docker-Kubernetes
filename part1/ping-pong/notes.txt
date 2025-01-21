@@ -1,0 +1,5 @@
+// exercise09
+docker build -t ping-pong .
+k3d image import ping-pong:latest
+kubectl apply -f manifests/   
+// available on localhost:8081/pingpong

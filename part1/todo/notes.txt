@@ -1,0 +1,50 @@
+ imagePullPolicy: Never // very important when using local image
+
+
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  15s   default-scheduler  Successfully assigned default/web-server-69ffd6bfd9-5p7v4 to k3d-k3s-default-server-0
+  Normal  Pulled     15s   kubelet            Container image "web-server:latest" already present on machine
+  Normal  Created    10s   kubelet            Created container web-server
+  Normal  Started    10s   kubelet            Started container web-server
+yuchencai exercise02 % kubectl get pods                        
+NAME                          READY   STATUS    RESTARTS   AGE
+web-server-69ffd6bfd9-5p7v4   1/1     Running   0          32s
+yuchencai exercise02 % kubectl logs web-server-69ffd6bfd9-5p7v4
+Server started in port 3000
+
+// exercise05
+yuchencai exercise02 % kubectl get pods
+NAME                          READY   STATUS    RESTARTS   AGE
+web-server-69ffd6bfd9-45gpp   1/1     Running   0          5s
+yuchencai exercise02 % kubectl port-forward web-server-69ffd6bfd9-45gpp 3003:3000
+Forwarding from 127.0.0.1:3003 -> 3000
+Forwarding from [::1]:3003 -> 3000
+Handling connection for 3003
+Handling connection for 3003
+
+// exercise06
+k3d cluster create --port 8082:30080@agent:0 -p 8081:80@loadbalancer --agents 2
+// add the image to cluster again
+kubectl apply -f manifests/service.yaml 
+
+kubectl get services                      
+NAME                 TYPE        CLUSTER-IP     EXTERNAL-IP   PORT(S)          AGE
+kubernetes           ClusterIP   10.43.0.1      <none>        443/TCP          21m
+web-server-service   NodePort    10.43.167.15   <none>        1234:30080/TCP   19m
+
+kubectl get endpoints web-server-service
+NAME                 ENDPOINTS        AGE
+web-server-service   10.42.2.5:3000   18m
+
+// available on http://localhost:8082/
+
+// exercise08
+// create ingress.yaml and service.yaml with clusterIP 
+kubectl delete -f manifests/ 
+kubectl apply -f manifests/               
+deployment.apps/web-server created
+ingress.networking.k8s.io/web-server-ingress created
+service/web-server-service created
+// available on http://localhost:8081/

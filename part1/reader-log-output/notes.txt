@@ -1,0 +1,37 @@
+// create kubernates cluster with 2 agent node
+k3d cluster create -a 2
+
+// kuberconfig 
+k3d kubeconfig get k3s-default
+
+// switch the current context in your kubectl configuration to k3d-k3s-default
+kubectl config use-context k3d-k3s-default
+
+// import image
+k3d image import log-output:latest 
+
+// apply deployment
+kubectl apply -f deployment.yaml 
+
+// inspect pod, very helpful when logs is empty
+kubectl get pods
+kubectl describe pod XXX
+
+// see the logs
+yuchencai exercise01 % kubectl logs log-output-7ff84db4f5-ngf6f         
+2025-01-20T17:55:31.492545Z: zMqaCPmte34Xz0apZBsgLvw59EI7B92SW20j
+2025-01-20T17:55:36.493399Z: zMqaCPmte34Xz0apZBsgLvw59EI7B92SW20j
+2025-01-20T17:55:41.494231Z: zMqaCPmte34Xz0apZBsgLvw59EI7B92SW20j
+2025-01-20T17:55:46.486357Z: zMqaCPmte34Xz0apZBsgLvw59EI7B92SW20j
+2025-01-20T17:55:51.491582Z: zMqaCPmte34Xz0apZBsgLvw59EI7B92SW20j
+
+// stop cluster
+k3d cluster stop
+// delete deployment
+kubectl delete deployment log-output
+kubectl delete -f manifests/
+
+// exercise07
+// create ingresss and service yaml files
+kubectl apply -f manifests/
+// available on localhost:8081

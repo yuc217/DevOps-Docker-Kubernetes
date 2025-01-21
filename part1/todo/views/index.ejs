@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo App</title>
+  <style>
+    img {
+      width: 300px; 
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Todo App</h1>
+  <img src="/image.jpg" alt="Random Image">
+  <form>
+    <input type="text" id="todoInput" maxlength="140" placeholder="Enter a todo">
+    <button type="button" onclick="addTodo()">Send</button>
+  </form>
+  <ul id="todoList">
+    <% todos.forEach(function(todo) { %>
+      <li><%= todo %></li>
+    <% }); %>
+  </ul>
+  <script>
+    function addTodo() {
+      const input = document.getElementById('todoInput');
+      const todo = input.value.trim();
+      if (todo) {
+        const list = document.getElementById('todoList');
+        const li = document.createElement('li');
+        li.textContent = todo;
+        list.appendChild(li);
+        input.value = '';
+      }
+    }
+  </script>
+</body>
+</html>

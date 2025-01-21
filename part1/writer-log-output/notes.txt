@@ -1,0 +1,3 @@
+docker build -t log-writer:latest ./writer
+docker build -t log-reader:latest ./reader
+

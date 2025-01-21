@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: log-output
+spec:
+  volumes:
+  - name: shared-data
+    persistentVolumeClaim:
+          claimName: shared-pvc
+    # emptyDir: {}
+  containers:
+  - name: log-writer
+    image: log-writer:latest
+    volumeMounts:
+    - name: shared-data
+      mountPath: /data
+  - name: log-reader
+    image: log-reader:latest
+    ports:
+    - containerPort: 3000
+    volumeMounts:
+    - name: shared-data
+      mountPath: /data
