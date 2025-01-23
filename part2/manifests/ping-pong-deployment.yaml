@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: devops-apps
+  name: ping-pong
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ping-pong
+  template:
+    metadata:
+      labels:
+        app: ping-pong
+    spec:
+      containers:
+      - name: ping-pong
+        image: ping-pong:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3000
+        env:
+        - name: PORT
+          value: "3000"
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: POSTGRES_PASSWORD
+        - name: POSTGRES_DB
+          value: pingpong
+        - name: POSTGRES_HOST
+          value: postgres
+        - name: POSTGRES_PORT
+          value: "5432"

@@ -1,0 +1,54 @@
+
+// build docker images
+docker build -t log-output:latest .
+docker build -t ping-pong:latest .
+// add to k3d, as they are local images
+k3d image import log-output:latest
+k3d image import ping-pong:latest
+// start deployment and services
+kubectl apply -f manifests/
+// timestamp and count: localhost:8081/status
+// count is available at: localhost:8081/pingpong
+
+
+kubectl create namespace devops-apps // for log-output and ping-pong
+kubectl create namespace todo-app
+
+
+CREATE USER postgres WITH PASSWORD 'postgres';
+CREATE DATABASE todo;
+GRANT ALL PRIVILEGES ON DATABASE todo TO postgres;
+
+// secrets for db credentials
+echo -n 'password' | base64
+// generate key pair
+age-keygen -o key.txt
+
+sops --encrypt \
+      --age XXXXXX \
+      --encrypted-regex '^(data|stringData)$' \
+      secret.yaml > secret.enc.yaml
+
+sops --decrypt secret.enc.yaml | kubectl apply -f -
+
+secret.yaml and key.txt not added to commit
+
+
+// the user and pwd are the same for the db
+// need to initialize it to create the db manually
+
+brew install helm
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+kubectl create namespace prometheus
+helm install prometheus-community/kube-prometheus-stack --generate-name --namespace prometheus
+
+kubectl get po -n prometheus
+kubectl -n prometheus port-forward kube-prometheus-stack-1602180058-grafana-59cd48d794-4459m 3000
+// -> http://localhost:3000
+
+helm repo add grafana https://grafana.github.io/helm-charts
+kubectl create namespace loki-stack
+helm upgrade --install loki --namespace=loki-stack grafana/loki-stack
+kubectl get all -n loki-stack
