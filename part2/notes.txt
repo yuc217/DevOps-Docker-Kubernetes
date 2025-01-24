@@ -25,7 +25,7 @@ echo -n 'password' | base64
 age-keygen -o key.txt
 
 sops --encrypt \
-      --age age1dpqks75raur3tazj6ntfw34wa82y9t0ux3s96hcd4c4a7a76rsms3ds2mj \
+      --age xxx(xxxpubkeyxx) \
       --encrypted-regex '^(data|stringData)$' \
       secret.yaml > secret.enc.yaml
 
@@ -34,8 +34,6 @@ sops --decrypt secret.enc.yaml | kubectl apply -f -
 
 secret.yaml and key.txt not added to commit
 yuchencai manifests % sops --decrypt secret.enc.yaml | kubectl apply -f -          
-sops metadata not found
-error: no objects passed to apply
 yuchencai manifests % kubectl apply -f postgres-init-script.yaml
 configmap/postgres-init-script unchanged
 yuchencai manifests % kubectl apply -f postgres-statefulset.yaml
@@ -46,7 +44,6 @@ service/postgres created
 // restart postgres
 kubectl delete pvc postgres-storage-postgres-0 -n devops-apps
 kubectl delete pod postgres-0 -n devops-apps
-
 
 // the user and pwd are the same for the db
 // need to initialize it to create the db manually
