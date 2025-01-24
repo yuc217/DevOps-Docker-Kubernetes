@@ -13,5 +13,6 @@ spec:
           containers:
           - name: todo-cronjob
             image: todo-cronjob:latest
+            imagePullPolicy: Never
             command: ["/bin/sh", "/usr/local/bin/random-todo.sh"]
           restartPolicy: OnFailure
