@@ -1,8 +1,8 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  namespace: devops-apps
   name: postgres
+  namespace: devops-apps
 spec:
   serviceName: "postgres"
   replicas: 1
@@ -29,12 +29,19 @@ spec:
               name: postgres-secret
               key: POSTGRES_PASSWORD
         - name: POSTGRES_DB
-          value: pingpong
+          value: postgres
         ports:
         - containerPort: 5432
         volumeMounts:
         - name: postgres-storage
           mountPath: /var/lib/postgresql/data
+        - name: init-script
+          mountPath: /docker-entrypoint-initdb.d/init.sql
+          subPath: init.sql
+      volumes:
+      - name: init-script
+        configMap:
+          name: postgres-init-script
   volumeClaimTemplates:
   - metadata:
       name: postgres-storage

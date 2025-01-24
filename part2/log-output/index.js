@@ -4,7 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const app = express();
 const { Pool } = require('pg');
 const randomString = uuidv4();
-
+const fs = require('fs');
 let counter = 0;
 
 app.get('/status', async (req, res) => {

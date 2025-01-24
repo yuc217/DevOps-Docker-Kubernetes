@@ -25,13 +25,27 @@ echo -n 'password' | base64
 age-keygen -o key.txt
 
 sops --encrypt \
-      --age XXXXXX \
+      --age age1dpqks75raur3tazj6ntfw34wa82y9t0ux3s96hcd4c4a7a76rsms3ds2mj \
       --encrypted-regex '^(data|stringData)$' \
       secret.yaml > secret.enc.yaml
 
+export SOPS_AGE_KEY_FILE=$(pwd)/key.txt 
 sops --decrypt secret.enc.yaml | kubectl apply -f -
 
 secret.yaml and key.txt not added to commit
+yuchencai manifests % sops --decrypt secret.enc.yaml | kubectl apply -f -          
+sops metadata not found
+error: no objects passed to apply
+yuchencai manifests % kubectl apply -f postgres-init-script.yaml
+configmap/postgres-init-script unchanged
+yuchencai manifests % kubectl apply -f postgres-statefulset.yaml
+statefulset.apps/postgres created
+yuchencai manifests % kubectl apply -f postgres-service.yaml    
+service/postgres created
+
+// restart postgres
+kubectl delete pvc postgres-storage-postgres-0 -n devops-apps
+kubectl delete pod postgres-0 -n devops-apps
 
 
 // the user and pwd are the same for the db
