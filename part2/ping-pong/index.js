@@ -13,7 +13,6 @@ const pool = new Pool({
   port: 5432,
 });
 
-// Log pool connection status
 pool.on('connect', () => console.log('Connected to the database.'));
 pool.on('error', (err) => console.error('Database connection error:', err));
 

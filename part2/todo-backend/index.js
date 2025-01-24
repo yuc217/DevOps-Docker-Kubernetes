@@ -25,12 +25,8 @@ const pool = new Pool({
   port: process.env.POSTGRES_PORT,
 });
 
-// pool.query(
-//   `CREATE TABLE IF NOT EXISTS todo (
-//     id SERIAL PRIMARY KEY,
-//     todo TEXT NOT NULL
-//   )`
-// );
+pool.on('connect', () => console.log('Connected to the database.'));
+pool.on('error', (err) => console.error('Database connection error:', err));
 
 async function initializeDatabase() {
   const client = await pool.connect();
@@ -39,7 +35,7 @@ async function initializeDatabase() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS todos (
         id SERIAL PRIMARY KEY,
-        todo TEXT
+        text TEXT
       );
     `);
 
@@ -47,7 +43,7 @@ async function initializeDatabase() {
     const result = await client.query('SELECT COUNT(*) FROM todos');
     if (result.rows[0].count === '0') {
       await client.query(`
-        INSERT INTO todos (todo) VALUES
+        INSERT INTO todos (text) VALUES
         ('todo1'),
         ('todo2');
       `);
@@ -70,7 +66,7 @@ app.get('/todos', async (req, res) => {
 });
 
 app.post('/todos', async (req, res) => {
-  console.log(req.body.todo)
+  // console.log(req.body.todo)
   const newTodo = req.body.todo;
   if (newTodo && newTodo.length <= 140) {
     console.log('New todo:', newTodo);
@@ -78,8 +74,8 @@ app.post('/todos', async (req, res) => {
     // todos.push(todoItem);
     const client = await pool.connect();
     try {
-      await client.query('INSERT INTO todos (todo) VALUES ($1)', [newTodo]);
-      res.send('Todo created');
+      await client.query('INSERT INTO todos (text) VALUES ($1)', [newTodo]);
+      res.status(201).json({ message: 'Todo created' });
     } finally {
       client.release();
     }
