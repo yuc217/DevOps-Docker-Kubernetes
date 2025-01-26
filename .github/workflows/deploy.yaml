@@ -68,27 +68,27 @@ jobs:
     #       docker build -t yuc217/$FRONTEND_IMAGE:$BRANCH-$GITHUB_SHA ./part3/todo-frontend/
     #       docker push yuc217/$FRONTEND_IMAGE:$BRANCH-$GITHUB_SHA
     
-      - name: Set Namespace
-        id: set-namespace
-        run: |
-          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            echo "NAMESPACE=todo-app" >> $GITHUB_ENV
-          else
-            echo "NAMESPACE=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
-          fi
+    #   - name: Set Namespace
+    #     id: set-namespace
+    #     run: |
+    #       if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+    #         echo "NAMESPACE=todo-app" >> $GITHUB_ENV
+    #       else
+    #         echo "NAMESPACE=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+    #       fi
 
-      - name: Create or Update Namespace
-        run: |
-          kubectl create namespace ${{ env.NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+    #   - name: Create or Update Namespace
+    #     run: |
+    #       kubectl create namespace ${{ env.NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
 
-      - name: Verify Namespace
-        run: |
-            kubectl get namespace ${{ env.NAMESPACE }}
+    #   - name: Verify Namespace
+    #     run: |
+    #         kubectl get namespace ${{ env.NAMESPACE }}
 
-      - name: Verify kubeconfig context
-        run: |
-            kubectl config current-context
-            kubectl config view
+    #   - name: Verify kubeconfig context
+    #     run: |
+    #         kubectl config current-context
+    #         kubectl config view
 
       - name: Set up Kustomize
         uses: imranismail/setup-kustomize@v2.1.0
