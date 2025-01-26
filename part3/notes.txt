@@ -1,0 +1,46 @@
+// install gcloud, setup account
+gcloud auth login
+gcloud config set project devops-project-448917
+gcloud components install kubectl
+
+gcloud services enable container.googleapis.com
+gcloud container clusters create dwk-cluster --zone=europe-north1-b --cluster-version=1.29 --disk-size=32 --num-nodes=3 --machine-type=e2-micro
+gcloud container clusters get-credentials dwk-cluster --zone europe-north1-b
+
+kubectl create namespace devops-apps 
+
+// need to upload image to registry for google cloud
+docker tag ping-pong:latest yuc217/ping-pong:latest
+docker tag log-output:latest yuc217/log-output:latest
+docker push yuc217/ping-pong:latest
+
+kubectl apply -f manifests/postgres-init-script.yaml
+kubectl apply -f manifests/ping-pong-lb-service.yaml
+kubectl get svc -n devops-apps
+kubectl delete svc ping-pong-service -n devops-apps 
+kubectl describe service ping-pong-service -n devops-apps
+kubectl delete pod log-output-6cc85c96d8-x94gl -n devops-apps
+
+// working succesfully: http://35.228.103.187:2345/count
+// updating pingpong counter http://35.228.103.187:2345/pingpong
+
+kubectl get ingress -n devops-apps
+
+kubectl set image deployment/log-output log-output=yuc217/log-output:latest -n devops-apps
+kubectl set image deployment/log-output log-output=yuc217/log-output -n devops-apps 
+
+// http://34.149.86.76/status is showing 2025-01-25T20:42:52.861Z: 7eb54f12-ffce-4f98-bba0-380ba837ed73 Ping / Pongs: 6
+// http://34.149.86.76/pingpong is reponding to increment too
+
+kubectl create namespace todo-app
+kubectl apply -f todo-manifests/postgres-statefulset.yaml 
+
+create google cloud service key
+
+// todo app working on http://34.8.218.105/ with images and todo input
+// backend: /todos displaying json 
+
+kubectl get ingress -n todo-app
+
+NAME           CLASS    HOSTS   ADDRESS        PORTS   AGE
+todo-ingress   <none>   *       34.8.218.105   80      77m

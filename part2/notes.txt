@@ -45,6 +45,8 @@ service/postgres created
 kubectl delete pvc postgres-storage-postgres-0 -n devops-apps
 kubectl delete pod postgres-0 -n devops-apps
 
+kubectl exec -it postgres-0 -n todo-app -- psql -U postgres
+
 // the user and pwd are the same for the db
 // need to initialize it to create the db manually
 

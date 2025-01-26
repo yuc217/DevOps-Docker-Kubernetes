@@ -1,0 +1,76 @@
+name: Release application
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GKE_CLUSTER: dwk-cluster
+  GKE_ZONE: europe-north1-b
+  BACKEND_IMAGE: todo-backend
+  FRONTEND_IMAGE: todo-frontend
+  BACKEND_SERVICE: todo-backend-service
+  FRONTEND_SERVICE: todo-frontend-service
+  BRANCH: ${{ github.ref_name }}
+
+jobs:
+  build-publish-deploy:
+    name: Build, Publish and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: 'Set up Cloud SDK'
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: 'Use gcloud CLI'
+        run: gcloud info
+
+      - name: 'Authenticate to Google Cloud'
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GKE_SA_KEY }}'
+
+      - name: 'Configure Docker to use gcloud'
+        run: gcloud --quiet auth configure-docker
+
+      - name: 'Get GKE credentials'
+        uses: 'google-github-actions/get-gke-credentials@v2'
+        with:
+          cluster_name: '${{ env.GKE_CLUSTER }}'
+          project_id: '${{ env.PROJECT_ID }}'
+          location: '${{ env.GKE_ZONE }}'
+    
+      - name: Verify gcloud CLI
+        run: gcloud info
+
+    #   - name: Build and Push Backend
+    #     run: |
+    #       docker build -t $BACKEND_IMAGE:$BRANCH-$GITHUB_SHA ./part3/todo-backend
+    #       docker push $BACKEND_IMAGE:$BRANCH-$GITHUB_SHA
+
+    #   - name: Build and Push Frontend
+    #     run: |
+    #       docker build -t $FRONTEND_IMAGE:$BRANCH-$GITHUB_SHA ./part3/todo-frontend
+    #       docker push $FRONTEND_IMAGE:$BRANCH-$GITHUB_SHA
+
+    #   - name: Set up Kustomize
+    #     uses: imranismail/setup-kustomize@v2.1.0
+
+    #   - name: Deploy Backend
+    #     run: |-
+    #       kustomize edit set image PROJECT/BACKEND_IMAGE=gcr.io/$PROJECT_ID/$BACKEND_IMAGE:$BRANCH-$GITHUB_SHA
+    #       kustomize build ./backend | kubectl apply -f -
+    #       kubectl rollout status deployment $BACKEND_SERVICE
+    #       kubectl get services -o wide
+
+    #   - name: Deploy Frontend
+    #     run: |-
+    #       kustomize edit set image PROJECT/FRONTEND_IMAGE=gcr.io/$PROJECT_ID/$FRONTEND_IMAGE:$BRANCH-$GITHUB_SHA
+    #       kustomize build ./frontend | kubectl apply -f -
+    #       kubectl rollout status deployment $FRONTEND_SERVICE
+    #       kubectl get services -o wide
