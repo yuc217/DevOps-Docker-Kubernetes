@@ -60,12 +60,12 @@ jobs:
 
       - name: Build and Push Backend
         run: |
-          docker build -t $BACKEND_IMAGE:$BRANCH-$GITHUB_SHA ./part3/todo-backend/
+          docker build -t yuc217/$BACKEND_IMAGE:$BRANCH-$GITHUB_SHA ./part3/todo-backend/
           docker push yuc217/$BACKEND_IMAGE:$BRANCH-$GITHUB_SHA
 
       - name: Build and Push Frontend
         run: |
-          docker build -t $FRONTEND_IMAGE:$BRANCH-$GITHUB_SHA ./part3/todo-frontend/
+          docker build -t yuc217/$FRONTEND_IMAGE:$BRANCH-$GITHUB_SHA ./part3/todo-frontend/
           docker push yuc217/$FRONTEND_IMAGE:$BRANCH-$GITHUB_SHA
 
       - name: Set up Kustomize
