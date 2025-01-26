@@ -53,7 +53,7 @@ jobs:
         run: gcloud info
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
             username: ${{ secrets.DOCKER_USERNAME }}
             password: ${{ secrets.DOCKER_PASSWORD }}
@@ -61,12 +61,12 @@ jobs:
       - name: Build and Push Backend
         run: |
           docker build -t $BACKEND_IMAGE:$BRANCH-$GITHUB_SHA ./part3/todo-backend/
-          docker push $BACKEND_IMAGE:$BRANCH-$GITHUB_SHA
+          docker push yuc217/$BACKEND_IMAGE:$BRANCH-$GITHUB_SHA
 
       - name: Build and Push Frontend
         run: |
           docker build -t $FRONTEND_IMAGE:$BRANCH-$GITHUB_SHA ./part3/todo-frontend/
-          docker push $FRONTEND_IMAGE:$BRANCH-$GITHUB_SHA
+          docker push yuc217/$FRONTEND_IMAGE:$BRANCH-$GITHUB_SHA
 
       - name: Set up Kustomize
         uses: imranismail/setup-kustomize@v2.1.0
