@@ -48,11 +48,6 @@ jobs:
           cluster_name: '${{ env.GKE_CLUSTER }}'
           project_id: '${{ env.PROJECT_ID }}'
           location: '${{ env.GKE_ZONE }}'
-        
-      - name: Authenticate kubectl
-        run: |
-            gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} --zone ${{ env.GKE_ZONE }} --project ${{ env.PROJECT_ID }}
-
 
     #   - name: Log in to Docker Hub
     #     uses: docker/login-action@v3
@@ -98,7 +93,10 @@ jobs:
       - name: Deploy to Kubernetes
         run: |-
           cd part3/todo-manifests/
+          kustomize edit set namespace ${{ env.NAMESPACE }}
+          kustomize edit set image $BACKEND_IMAGE=$BACKEND_IMAGE:$BRANCH-$GITHUB_SHA
+          kustomize edit set image $BACKEND_IMAGE=$BACKEND_IMAGE:$BRANCH-$GITHUB_SHA
           kustomize build . | kubectl apply -f - -n ${{ env.NAMESPACE }}
-          kubectl rollout status deployment $BACKEND_SERVICE -n ${{ env.NAMESPACE }}
-          kubectl rollout status deployment $FRONTEND_SERVICE -n ${{ env.NAMESPACE }}
+          kubectl rollout status deployment todo-backend -n ${{ env.NAMESPACE }}
+          kubectl rollout status deployment todo-frontend -n ${{ env.NAMESPACE }}
           kubectl get services -o wide -n ${{ env.NAMESPACE }}
