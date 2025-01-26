@@ -67,6 +67,19 @@ jobs:
         run: |
           docker build -t yuc217/$FRONTEND_IMAGE:$BRANCH-$GITHUB_SHA ./part3/todo-frontend/
           docker push yuc217/$FRONTEND_IMAGE:$BRANCH-$GITHUB_SHA
+    
+      - name: Set Namespace
+        id: set-namespace
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "NAMESPACE=todo-app" >> $GITHUB_ENV
+          else
+            echo "NAMESPACE=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+          fi
+
+      - name: Create or Update Namespace
+        run: |
+          kubectl create namespace ${{ env.NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Set up Kustomize
         uses: imranismail/setup-kustomize@v2.1.0
@@ -74,9 +87,10 @@ jobs:
       - name: Deploy to Kubernetes
         run: |-
           cd part3/todo-manifests
+          kustomize edit set namespace ${{ env.NAMESPACE }}
           kustomize edit set image $BACKEND_IMAGE=$BACKEND_IMAGE:$BRANCH-$GITHUB_SHA
           kustomize edit set image $BACKEND_IMAGE=$BACKEND_IMAGE:$BRANCH-$GITHUB_SHA
           kustomize build . | kubectl apply -f -
-          kubectl rollout status deployment $BACKEND_SERVICE
-          kubectl rollout status deployment $FRONTEND_SERVICE
-          kubectl get services -o wide
+          kubectl rollout status deployment $BACKEND_SERVICE -n ${{ env.NAMESPACE }}
+          kubectl rollout status deployment $FRONTEND_SERVICE -n ${{ env.NAMESPACE }}
+          kubectl get services -o wide -n ${{ env.NAMESPACE }}

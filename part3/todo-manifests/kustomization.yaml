@@ -1,10 +1,11 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: todo-app
 resources:
   - postgres-statefulset.yaml
   - postgres-service.yaml
-  - todo-frontend-service.yaml
   - todo-frontend-deployment.yaml
-  - todo-backend-service.yaml
+  - todo-frontend-service.yaml
   - todo-backend-deployment.yaml
+  - todo-backend-service.yaml
   - ingress.yaml
