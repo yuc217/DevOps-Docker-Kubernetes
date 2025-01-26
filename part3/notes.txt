@@ -44,3 +44,7 @@ kubectl get ingress -n todo-app
 
 NAME           CLASS    HOSTS   ADDRESS        PORTS   AGE
 todo-ingress   <none>   *       34.8.218.105   80      77m
+
+kubectl create secret generic gcp-service-account-key --from-file=key.json=/path/to/your/service-account-key.json -n todo-app
+
+gsutil mb gs://devops-backups-bucket/
