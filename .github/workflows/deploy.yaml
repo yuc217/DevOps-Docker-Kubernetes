@@ -81,6 +81,15 @@ jobs:
         run: |
           kubectl create namespace ${{ env.NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
 
+      - name: Verify Namespace
+        run: |
+            kubectl get namespace ${{ env.NAMESPACE }}
+
+      - name: Verify kubeconfig context
+        run: |
+            kubectl config current-context
+            kubectl config view
+
       - name: Set up Kustomize
         uses: imranismail/setup-kustomize@v2.1.0
 
