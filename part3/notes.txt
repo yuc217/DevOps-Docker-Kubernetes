@@ -48,3 +48,8 @@ todo-ingress   <none>   *       34.8.218.105   80      77m
 kubectl create secret generic gcp-service-account-key --from-file=key.json=/path/to/your/service-account-key.json -n todo-app
 
 gsutil mb gs://devops-backups-bucket/
+// check backup
+gsutil ls gs://your-backup-bucket/
+
+gcloud services enable monitoring.googleapis.com logging.googleapis.com
+

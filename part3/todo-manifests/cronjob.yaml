@@ -10,13 +10,13 @@ spec:
         spec:
           containers:
           - name: backup
-            image: google/cloud-sdk:alpine 
+            image: google/cloud-sdk:latest 
             env:
               - name: GOOGLE_APPLICATION_CREDENTIALS
-                value: "/secrets/gcp-credentials/key.json"
+                value: "/secrets/gcp-service-account-key/key.json"
             volumeMounts:
               - name: gcp-credentials
-                mountPath: /secrets/gcp-credentials
+                mountPath: /secrets/gcp-service-account-key
                 readOnly: true
             command:
               - /bin/sh
@@ -31,4 +31,4 @@ spec:
           volumes:
             - name: gcp-credentials
               secret:
-                secretName: gcp-credentials
+                secretName: gcp-service-account-key
