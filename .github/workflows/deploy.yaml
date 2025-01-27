@@ -1,9 +1,7 @@
 name: Release application
 
 on:
-  push:
-    branches:
-      - main
+    workflow_dispatch:
 
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
@@ -87,7 +85,7 @@ jobs:
           kustomize edit set namespace ${{ env.NAMESPACE }}
           kustomize edit set image $BACKEND_IMAGE=$BACKEND_IMAGE:$BRANCH-$GITHUB_SHA
           kustomize edit set image $BACKEND_IMAGE=$BACKEND_IMAGE:$BRANCH-$GITHUB_SHA
-          kustomize build . | kubectl apply -f - -n ${{ env.NAMESPACE }}
+          kustomize build . | kubectl apply -f -
           kubectl rollout status deployment todo-backend -n ${{ env.NAMESPACE }}
           kubectl rollout status deployment todo-frontend -n ${{ env.NAMESPACE }}
           kubectl get services -o wide -n ${{ env.NAMESPACE }}
