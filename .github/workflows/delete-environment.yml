@@ -35,7 +35,7 @@ jobs:
       - name: Set Namespace
         id: set-namespace
         run: |
-          echo "NAMESPACE=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+          echo "NAMESPACE=${{ github.event.ref }}" >> $GITHUB_ENV
 
       - name: Verify Namespace
         run: |
