@@ -1,4 +1,4 @@
-name: build and publish application
+name: build and publish for GitOps
 
 on:
     workflow_dispatch:
@@ -27,7 +27,9 @@ jobs:
         uses: imranismail/setup-kustomize@v2
   
       - name: Use right image
-        run: kustomize edit set image PROJECT/IMAGE=yuc217/ping-pong:$GITHUB_SHA
+        run: |-
+            cd part4/manifests/
+            kustomize edit set image PROJECT/IMAGE=yuc217/ping-pong:$GITHUB_SHA
 
       - name: commit kustomization.yaml to GitHub
         uses: EndBug/add-and-commit@v9
