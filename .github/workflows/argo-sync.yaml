@@ -23,8 +23,8 @@ jobs:
           docker build -t yuc217/ping-pong:$GITHUB_SHA ./part3/ping-pong/
           docker push yuc217/ping-pong:$GITHUB_SHA
     
-          - name: Set up Kustomize
-          uses: imranismail/setup-kustomize@v2
+      - name: Set up Kustomize
+        uses: imranismail/setup-kustomize@v2
   
       - name: Use right image
         run: kustomize edit set image PROJECT/IMAGE=yuc217/ping-pong:$GITHUB_SHA
