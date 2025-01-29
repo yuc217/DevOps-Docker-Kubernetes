@@ -55,6 +55,20 @@ app.post('/todos', async (req, res) => {
   }
 });
 
+app.get('/health', async (req, res) => {
+  try {
+    const response = await axios.get('http://todo-backend-service:2345/todos');
+    if (response.status === 200) {
+      res.status(200).json({ status: 'healthy' });
+    } else {
+      res.status(500).json({ status: 'unhealthy' });
+    }
+  } catch (err) {
+    console.error('Error connecting to the backend service:', err);
+    res.status(500).json({ status: 'unhealthy' });
+  }
+});
+
 // app.get('/', (req, res) => {
 //   res.render('index', { todos: ['todo 1', 'todo 2', 'todo 3'] });
 // });
@@ -69,6 +83,20 @@ app.get('/', async (req, res) => {
   } catch (error) {
     console.error('Error fetching todos:', error);
     res.status(500).send('Error fetching todos');
+  }
+});
+
+app.put('/todos/:id', async (req, res) => {
+  const todoId = req.params.id;
+  try {
+    const response = await axios.put(`http://todo-backend-service:2345/todos/${todoId}`, { done: true });
+    // const response = await axios.put(`http://localhost:3000/todos/${todoId}`, { done: true });
+    
+    res.json(response.data);
+    console.log('Todo marked as done:', response.data);
+  } catch (error) {
+    console.error('Error marking todo as done:', error);
+    res.status(500).send('Error marking todo as done');
   }
 });
 

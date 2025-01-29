@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-script
+  namespace: devops-apps
+data:
+  init.sql: |
+    CREATE USER postgres WITH PASSWORD 'postgres';
+    CREATE DATABASE pingpong;
+    GRANT ALL PRIVILEGES ON DATABASE pingpong TO postgres;

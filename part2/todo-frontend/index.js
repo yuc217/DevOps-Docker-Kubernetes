@@ -64,7 +64,7 @@ app.get('/', async (req, res) => {
     const response = await axios.get('http://todo-backend-service:2345/todos');
     // const response = await axios.get('http://localhost:3000/todos');
     const todos = response.data;
-    console.log('Todos:', todos);
+    // console.log('Todos:', todos);
     res.render('index', { todos });
   } catch (error) {
     console.error('Error fetching todos:', error);

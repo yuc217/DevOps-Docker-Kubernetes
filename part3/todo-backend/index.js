@@ -7,6 +7,7 @@ app.use(bodyParser.json());
 require('dotenv').config();
 const morgan = require('morgan');
 // const { createLogger, transports, format } = require('winston');
+const { connectToNats, getNatsConnection } = require('./natsClient');
 
 const PORT = process.env.PORT || 3000;
 app.use(morgan('combined'));
@@ -35,7 +36,8 @@ async function initializeDatabase() {
     await client.query(`
       CREATE TABLE IF NOT EXISTS todos (
         id SERIAL PRIMARY KEY,
-        text TEXT
+        text TEXT,
+        done BOOLEAN DEFAULT FALSE
       );
     `);
 
@@ -53,6 +55,40 @@ async function initializeDatabase() {
   }
 
 }
+
+
+app.get('/health', async (req, res) => {
+  try {
+    const client = await pool.connect();
+    client.release();
+    res.status(200).json({ status: 'healthy' });
+  } catch (err) {
+    console.error('Error connecting to the database:', err);
+    res.status(500).json({ status: 'unhealthy' });
+  }
+});
+
+
+// for part4
+app.put('/todos/:id', async (req, res) => {
+  const todoId = req.params.id;
+  const client = await pool.connect();
+  try {
+    const result = await client.query('UPDATE todos SET done = TRUE WHERE id = $1 RETURNING *', [todoId]);
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: 'Todo not found' });
+    } else {
+      const nats = getNatsConnection();
+            await nats.publish('todos.updated', JSON.stringify({
+                event: 'todo_updated',
+                todo: result.rows[0]
+            }));
+      res.json(result.rows[0]);
+    }
+  } finally {
+    client.release();
+  }
+});
 
 app.get('/todos', async (req, res) => {
   // res.json(todos);
@@ -75,6 +111,11 @@ app.post('/todos', async (req, res) => {
     const client = await pool.connect();
     try {
       await client.query('INSERT INTO todos (text) VALUES ($1)', [newTodo]);
+      const nats = getNatsConnection();
+            await nats.publish('todos.created', JSON.stringify({
+                event: 'todo_created',
+                todo: result.rows[0]
+            }));
       res.status(201).json({ message: 'Todo created' });
     } finally {
       client.release();
@@ -92,5 +133,6 @@ app.get('/', (req, res) => {
 
 app.listen(PORT, async () => {
   await initializeDatabase();
+  await connectToNats();
   console.log(`Todo backend service running on port ${PORT}`);
 });

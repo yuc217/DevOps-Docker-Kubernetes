@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: cpu-usage-monitor
+  namespace: todo-app
+spec:
+  metrics:
+  - name: cpu-usage
+    initialDelay: 10m
+    successCondition: result < 0.5  
+    failureCondition: result >= 0.8  
+    provider:
+      prometheus:
+        address: http://kube-prometheus-stack-prometheus.prometheus.svc.cluster.local:9090 
+        query: |
+          scalar(
+            sum(rate(container_cpu_usage_seconds_total{namespace="todo-app"}[1m])) 
+          )

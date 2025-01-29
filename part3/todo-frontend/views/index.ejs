@@ -6,8 +6,19 @@
   <title>Todo App</title>
   <style>
     img {
-      width: 300px; /* Set the width of the image */
-      height: auto; /* Maintain the aspect ratio */
+      width: 300px; 
+      height: auto; 
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    table, th, td {
+      border: 1px solid black;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
     }
   </style>
 </head>
@@ -18,11 +29,28 @@
     <input type="text" id="todoInput" maxlength="140" placeholder="Enter a todo" required>
     <button type="submit">Send</button>
   </form>
-  <ul id="todoList">
-    <% todos.forEach(function(todo) { %>
-      <li><%= todo.text %></li>
-    <% }); %>
-  </ul>
+  <table>
+    <thead>
+      <tr>
+        <th>Todo</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="todoList">
+      <% todos.forEach(function(todo) { %>
+        <tr>
+          <td><%= todo.text %></td>
+          <td><%= todo.done ? 'Done' : 'Not Done' %></td>
+          <td>
+            <% if (!todo.done) { %>
+              <button class="markDone" data-id="<%= todo.id %>">Mark as Done</button>
+            <% } %>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
   <script>
     document.getElementById('todoForm').addEventListener('submit', async function(event) {
       event.preventDefault();
@@ -40,15 +68,46 @@
           const data = await response.json();
           if (response.ok) {
             const list = document.getElementById('todoList');
-            const li = document.createElement('li');
-            li.textContent = todo;
-            list.appendChild(li);
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${todo}</td>
+              <td>Not Done</td>
+              <td><button class="markDone" data-id="${data.id}">Mark as Done</button></td>
+            `;
+            list.appendChild(row);
             input.value = '';
           } else {
             console.error('Error creating todo:', data.message);
           }
         } catch (error) {
           console.error('Error creating todo:', error);
+        }
+      }
+    });
+
+    document.addEventListener('click', async function(event) {
+      if (event.target && event.target.classList.contains('markDone')) {
+        const todoId = event.target.getAttribute('data-id');
+        try {
+          const response = await fetch(`/todos/${todoId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          const data = await response.json();
+          if (response.ok) {
+            const row = event.target.closest('tr');
+            row.innerHTML = `
+              <td>${data.text}</td>
+              <td>Done</td>
+              <td></td>
+            `;
+          } else {
+            console.error('Error marking todo as done:', data.message);
+          }
+        } catch (error) {
+          console.error('Error marking todo as done:', error);
         }
       }
     });

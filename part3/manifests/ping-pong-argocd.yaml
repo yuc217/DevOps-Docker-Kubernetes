@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ping-pong-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: "https://github.com/YOUR_GITHUB_USERNAME/ping-pong-gitops.git"  # Replace with your repo URL
+    targetRevision: main
+    path: "."  # Path to the manifests in the repo
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ping-pong
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

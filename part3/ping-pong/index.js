@@ -49,6 +49,17 @@ async function initializeDatabase() {
   }
 }
 
+app.get('/health', async (req, res) => {
+  try {
+    const client = await pool.connect();
+    client.release();
+    res.status(200).json({ status: 'healthy' });
+  } catch (err) {
+    console.error('Error connecting to the database:', err);
+    res.status(500).json({ status: 'unhealthy' });
+  }
+});
+
 app.get('/pingpong', async (req, res) => {
   counter++;
   try {
