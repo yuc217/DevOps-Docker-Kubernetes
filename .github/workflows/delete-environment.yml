@@ -43,4 +43,4 @@ jobs:
 
       - name: Delete Namespace
         run: |
-          kubectl delete namespace ${{ env.NAMESPACE }}
+          kubectl delete namespace ${{ env.NAMESPACE }} --grace-period=0 --force
