@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+patches:
+  - path: deployment.yaml
+
+patchesStrategicMerge:
+  - patches/broadcaster-deployment.yaml
+  - patches/postgres-statefulset.yaml
+  - patches/todo-backend-deployment.yaml
+
+namePrefix: prod-
+namespace: prod
+
+images:
+  - name: broadcaster
+    newTag: latest
+  - name: todo-backend
+    newTag: latest
+  - name: todo-frontend
+    newTag: latest

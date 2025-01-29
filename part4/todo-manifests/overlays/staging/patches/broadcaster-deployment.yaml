@@ -2,9 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: broadcaster
-  namespace: todo-app
 spec:
-  replicas: 6
+  replicas: 1
   selector:
     matchLabels:
       app: broadcaster
@@ -15,12 +14,7 @@ spec:
     spec:
       containers:
       - name: broadcaster
-        image: yuc217/broadcaster:latest
+        image: yuc217/broadcaster:staging
         env:
         - name: NATS_URL
-          value: "nats://nats:4222"
-        - name: DISCORD_WEBHOOK_URL
-          valueFrom:
-            secretKeyRef:
-              name: discord-secret
-              key: webhook-url
+          $patch: delete
