@@ -7,6 +7,7 @@ env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
   GKE_CLUSTER: dwk-cluster
   GKE_ZONE: europe-north1-b
+  NAMESPACE: ${{ github.event.ref }}
 
 jobs:
   delete-environment:
@@ -43,4 +44,4 @@ jobs:
 
       - name: Delete Namespace
         run: |
-          kubectl delete namespace ${{ env.NAMESPACE }}  --grace-period=0 --force
+          kubectl get namespace $NAMESPACE -o json | tr -d "\n" | sed "s/\"finalizers\": \[[^]]\+\]/\"finalizers\": []/" | kubectl replace --raw /api/v1/namespaces/$NAMESPACE/finalize -f -
