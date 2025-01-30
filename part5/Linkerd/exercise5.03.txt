@@ -1,0 +1,204 @@
+# install the CRDs first
+linkerd install --crds | kubectl apply -f -
+
+# install the Linkerd control plane once the CRDs have been installed
+linkerd install | kubectl apply -f -
+
+linkerd check
+
+kubectl create namespace linkerd-viz
+
+kubectl apply -k github.com/fluxcd/flagger/kustomize/linkerd
+kubectl -n flagger-system rollout status deploy/flagger
+
+kubectl create namespace argo-rollouts && \
+  kubectl apply -n argo-rollouts -f https://github.com/argoproj/argo-rollouts/releases/latest/download/install.yaml
+
+kubectl apply -f - <<EOF
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: argo-rollouts-config # must be so name
+  namespace: argo-rollouts # must be in this namespace
+data:
+  trafficRouterPlugins: |-
+    - name: "argoproj-labs/gatewayAPI"
+      location: "https://github.com/argoproj-labs/rollouts-plugin-trafficrouter-gatewayapi/releases/download/v0.0.0-rc1/gateway-api-plugin-linux-amd64"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: argo-controller-role
+  namespace: argo-rollouts
+rules:
+  - apiGroups:
+      - gateway.networking.k8s.io
+    resources:
+      - httproutes
+    verbs:
+      - "*"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: argo-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: argo-controller-role
+subjects:
+  - namespace: argo-rollouts
+    kind: ServiceAccount
+    name: argo-rollouts
+EOF
+
+kubectl create ns test && \
+  kubectl apply -f https://run.linkerd.io/flagger.yml
+kubectl -n test rollout status deploy podinfo
+kubectl -n test port-forward svc/frontend 8080
+
+kubectl apply -f - <<EOF
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: podinfo
+  namespace: test
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: podinfo
+  service:
+    # service port number
+    port: 9898
+    # container port number or name (optional)
+    targetPort: 9898
+    # Reference to the Service that the generated HTTPRoute would attach to.
+    gatewayRefs:
+      - name: podinfo
+        namespace: test
+        group: core
+        kind: Service
+        port: 9898
+  analysis:
+    interval: 10s
+    threshold: 5
+    stepWeight: 10
+    maxWeight: 100
+    metrics:
+    - name: success-rate
+      templateRef:
+        name: success-rate
+        namespace: test
+      thresholdRange:
+        min: 99
+      interval: 1m
+---
+apiVersion: flagger.app/v1beta1
+kind: MetricTemplate
+metadata:
+  name: success-rate
+  namespace: test
+spec:
+  provider:
+    type: prometheus
+    address: http://prometheus.linkerd-viz:9090
+  query: |
+    sum(
+      rate(
+        response_total{
+          namespace="{{ namespace }}",
+          deployment=~"{{ target }}",
+          classification!="failure",
+          direction="inbound"
+        }[{{ interval }}]
+      )
+    ) 
+    / 
+    sum(
+      rate(
+        response_total{
+          namespace="{{ namespace }}",
+          deployment=~"{{ target }}",
+          direction="inbound"
+        }[{{ interval }}]
+      )
+    ) 
+    * 100
+EOF
+
+
+LAST SEEN   TYPE      REASON                  OBJECT                                  MESSAGE
+10m         Normal    IssuedLeafCertificate   serviceaccount/default                  issued certificate for default.test.serviceaccount.identity.linkerd.cluster.local until 2025-01-31 19:29:32 +0000 UTC: e7766a09b85b4de5a351c9f4508a257be7c75bb1d4ffd505a8bddfb2c84875d8
+10m         Normal    IssuedLeafCertificate   serviceaccount/default                  issued certificate for default.test.serviceaccount.identity.linkerd.cluster.local until 2025-01-31 19:29:32 +0000 UTC: f56d209a0b22ff0c396c89c37a4df64d2bba52fd7d11bc23778039138cd9a5f4
+50s         Normal    IssuedLeafCertificate   serviceaccount/default                  issued certificate for default.test.serviceaccount.identity.linkerd.cluster.local until 2025-01-31 19:39:11 +0000 UTC: e4f9b235a6833accb9c901ec22e2113c0b1fc2487be8d02accf9ea9ea42eec91
+10m         Normal    Scheduled               pod/frontend-f6f5549f8-dzxw2            Successfully assigned test/frontend-f6f5549f8-dzxw2 to gke-dwk-cluster-default-pool-09aa4e91-wxls
+10m         Normal    Pulled                  pod/frontend-f6f5549f8-dzxw2            Container image "cr.l5d.io/linkerd/proxy-init:v2.2.3" already present on machine
+10m         Normal    Created                 pod/frontend-f6f5549f8-dzxw2            Created container linkerd-init
+10m         Normal    Started                 pod/frontend-f6f5549f8-dzxw2            Started container linkerd-init
+10m         Normal    Pulled                  pod/frontend-f6f5549f8-dzxw2            Container image "cr.l5d.io/linkerd/proxy:stable-2.14.10" already present on machine
+10m         Normal    Created                 pod/frontend-f6f5549f8-dzxw2            Created container linkerd-proxy
+10m         Normal    Started                 pod/frontend-f6f5549f8-dzxw2            Started container linkerd-proxy
+10m         Normal    Pulling                 pod/frontend-f6f5549f8-dzxw2            Pulling image "nginx:alpine"
+10m         Normal    Pulled                  pod/frontend-f6f5549f8-dzxw2            Successfully pulled image "nginx:alpine" in 6.156s (6.158s including waiting)
+10m         Normal    Created                 pod/frontend-f6f5549f8-dzxw2            Created container nginx
+10m         Normal    Started                 pod/frontend-f6f5549f8-dzxw2            Started container nginx
+10m         Normal    SuccessfulCreate        replicaset/frontend-f6f5549f8           Created pod: frontend-f6f5549f8-dzxw2
+10m         Normal    ScalingReplicaSet       deployment/frontend                     Scaled up replica set frontend-f6f5549f8 to 1
+10m         Normal    Injected                deployment/frontend                     Linkerd sidecar proxy injected
+10m         Normal    Scheduled               pod/load-856b85d48d-kqjbv               Successfully assigned test/load-856b85d48d-kqjbv to gke-dwk-cluster-default-pool-09aa4e91-wxls
+10m         Normal    Pulled                  pod/load-856b85d48d-kqjbv               Container image "cr.l5d.io/linkerd/proxy-init:v2.2.3" already present on machine
+10m         Normal    Created                 pod/load-856b85d48d-kqjbv               Created container linkerd-init
+10m         Normal    Started                 pod/load-856b85d48d-kqjbv               Started container linkerd-init
+10m         Normal    Pulled                  pod/load-856b85d48d-kqjbv               Container image "cr.l5d.io/linkerd/proxy:stable-2.14.10" already present on machine
+10m         Normal    Created                 pod/load-856b85d48d-kqjbv               Created container linkerd-proxy
+10m         Normal    Started                 pod/load-856b85d48d-kqjbv               Started container linkerd-proxy
+10m         Normal    Pulling                 pod/load-856b85d48d-kqjbv               Pulling image "buoyantio/slow_cooker:1.2.0"
+10m         Normal    Pulled                  pod/load-856b85d48d-kqjbv               Successfully pulled image "buoyantio/slow_cooker:1.2.0" in 5.721s (5.727s including waiting)
+10m         Normal    Created                 pod/load-856b85d48d-kqjbv               Created container slow-cooker
+10m         Normal    Started                 pod/load-856b85d48d-kqjbv               Started container slow-cooker
+10m         Normal    SuccessfulCreate        replicaset/load-856b85d48d              Created pod: load-856b85d48d-kqjbv
+10m         Normal    ScalingReplicaSet       deployment/load                         Scaled up replica set load-856b85d48d to 1
+10m         Normal    Injected                deployment/load                         Linkerd sidecar proxy injected
+5m6s        Warning   FailedScheduling        pod/podinfo-5f6cfbbbc8-lhkf9            0/5 nodes are available: 5 Insufficient memory. preemption: 0/5 nodes are available: 5 No preemption victims found for incoming pod.
+5m32s       Normal    NotTriggerScaleUp       pod/podinfo-5f6cfbbbc8-lhkf9            pod didn't trigger scale-up:
+54s         Normal    Scheduled               pod/podinfo-5f6cfbbbc8-lhkf9            Successfully assigned test/podinfo-5f6cfbbbc8-lhkf9 to gke-dwk-cluster-default-pool-09aa4e91-swhq
+53s         Normal    Pulled                  pod/podinfo-5f6cfbbbc8-lhkf9            Container image "cr.l5d.io/linkerd/proxy-init:v2.2.3" already present on machine
+53s         Normal    Created                 pod/podinfo-5f6cfbbbc8-lhkf9            Created container linkerd-init
+52s         Normal    Started                 pod/podinfo-5f6cfbbbc8-lhkf9            Started container linkerd-init
+51s         Normal    Pulled                  pod/podinfo-5f6cfbbbc8-lhkf9            Container image "cr.l5d.io/linkerd/proxy:stable-2.14.10" already present on machine
+51s         Normal    Created                 pod/podinfo-5f6cfbbbc8-lhkf9            Created container linkerd-proxy
+51s         Normal    Started                 pod/podinfo-5f6cfbbbc8-lhkf9            Started container linkerd-proxy
+50s         Normal    Pulling                 pod/podinfo-5f6cfbbbc8-lhkf9            Pulling image "quay.io/stefanprodan/podinfo:1.7.0"
+44s         Normal    Pulled                  pod/podinfo-5f6cfbbbc8-lhkf9            Successfully pulled image "quay.io/stefanprodan/podinfo:1.7.0" in 5.915s (5.916s including waiting)
+44s         Normal    Created                 pod/podinfo-5f6cfbbbc8-lhkf9            Created container podinfod
+44s         Normal    Started                 pod/podinfo-5f6cfbbbc8-lhkf9            Started container podinfod
+10m         Normal    SuccessfulCreate        replicaset/podinfo-5f6cfbbbc8           Created pod: podinfo-5f6cfbbbc8-lhkf9
+1s          Normal    Scheduled               pod/podinfo-primary-66474b9f95-9q4q2    Successfully assigned test/podinfo-primary-66474b9f95-9q4q2 to gke-dwk-cluster-default-pool-09aa4e91-wxls
+1s          Normal    SuccessfulCreate        replicaset/podinfo-primary-66474b9f95   Created pod: podinfo-primary-66474b9f95-9q4q2
+1s          Normal    ScalingReplicaSet       deployment/podinfo-primary              Scaled up replica set podinfo-primary-66474b9f95 to 1
+1s          Normal    Injected                deployment/podinfo-primary              Linkerd sidecar proxy injected
+10m         Normal    ScalingReplicaSet       deployment/podinfo                      Scaled up replica set podinfo-5f6cfbbbc8 to 1
+10m         Normal    Injected                deployment/podinfo                      Linkerd sidecar proxy injected
+1s          Warning   Synced                  canary/podinfo                          Error checking metric providers: prometheus in metric template success-rate.test not avaiable: running query failed: request failed: Get "http://prometheus.linkerd-viz:9090/api/v1/query?query=vector%281%29": dial tcp: lookup prometheus.linkerd-viz on 34.118.224.10:53: no such host
+1s          Warning   Synced                  canary/podinfo                          podinfo-primary.test not ready: waiting for rollout to finish: observed deployment generation less than desired generation
+0s          Normal    Pulled                  pod/podinfo-primary-66474b9f95-9q4q2    Container image "cr.l5d.io/linkerd/proxy-init:v2.2.3" already present on machine
+0s          Normal    Created                 pod/podinfo-primary-66474b9f95-9q4q2    Created container linkerd-init
+0s          Normal    Started                 pod/podinfo-primary-66474b9f95-9q4q2    Started container linkerd-init
+0s          Normal    Pulled                  pod/podinfo-primary-66474b9f95-9q4q2    Container image "cr.l5d.io/linkerd/proxy:stable-2.14.10" already present on machine
+0s          Normal    Created                 pod/podinfo-primary-66474b9f95-9q4q2    Created container linkerd-proxy
+0s          Normal    Started                 pod/podinfo-primary-66474b9f95-9q4q2    Started container linkerd-proxy
+0s          Normal    IssuedLeafCertificate   serviceaccount/default                  issued certificate for default.test.serviceaccount.identity.linkerd.cluster.local until 2025-01-31 19:40:06 +0000 UTC: 4a7ede5868450ed6ad776a36c9411622da0c2b17392d72fe4566eda7954c1933
+0s          Normal    Pulling                 pod/podinfo-primary-66474b9f95-9q4q2    Pulling image "quay.io/stefanprodan/podinfo:1.7.0"
+0s          Warning   Synced                  canary/podinfo                          Error checking metric providers: prometheus in metric template success-rate.test not avaiable: running query failed: request failed: Get "http://prometheus.linkerd-viz:9090/api/v1/query?query=vector%281%29": dial tcp: lookup prometheus.linkerd-viz on 34.118.224.10:53: no such host
+0s          Warning   Synced                  canary/podinfo                          podinfo-primary.test not ready: waiting for rollout to finish: 0 of 1 (readyThreshold 100%) updated replicas are available
+0s          Normal    Pulled                  pod/podinfo-primary-66474b9f95-9q4q2    Successfully pulled image "quay.io/stefanprodan/podinfo:1.7.0" in 5.167s (5.173s including waiting)
+0s          Normal    Created                 pod/podinfo-primary-66474b9f95-9q4q2    Created container podinfod
+0s          Normal    Started                 pod/podinfo-primary-66474b9f95-9q4q2    Started container podinfod
+^C%                                                                                                          
+kubectl -n test get svc 
+NAME              TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
+frontend          ClusterIP   34.118.237.6     <none>        8080/TCP   11m
+podinfo           ClusterIP   34.118.225.8     <none>        9898/TCP   11m
+podinfo-canary    ClusterIP   34.118.225.51    <none>        9898/TCP   28s
+podinfo-primary   ClusterIP   34.118.225.176   <none>        9898/TCP   28s

@@ -1,0 +1,59 @@
+kubectl config get-contexts
+kubectl config current-context
+
+
+k3d cluster create --port 8082:30080@agent:0 -p 8081:80@loadbalancer --agents 2 --k3s-arg "--disable=traefik@server:0"
+
+kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.17.0/serving-crds.yaml
+
+kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.17.0/serving-core.yaml
+
+kubectl apply -f https://github.com/knative/net-kourier/releases/download/knative-v1.17.0/kourier.yaml
+
+kubectl patch configmap/config-network \
+  --namespace knative-serving \
+  --type merge \
+  --patch '{"data":{"ingress-class":"kourier.ingress.networking.knative.dev"}}'
+
+kubectl --namespace kourier-system get service kourier
+
+        NAME      TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)                      AGE
+        kourier   LoadBalancer   10.43.81.204   172.18.0.5    80:32659/TCP,443:31250/TCP   23s
+
+kubectl get pods -n knative-serving
+        NAME                                     READY   STATUS    RESTARTS   AGE
+        activator-7c48c6944d-nr9jb               1/1     Running   0          2m51s
+        autoscaler-775c659bc6-vn7nf              1/1     Running   0          2m51s
+        controller-7cf4fbd94-qjfmf               1/1     Running   0          2m49s
+        net-kourier-controller-568fb445b-hzdbd   1/1     Running   0          79s
+        webhook-57ccdb4884-vf5hm                 1/1     Running   0          2m49s
+
+kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.17.0/serving-default-domain.yaml
+kubectl apply -f https://github.com/knative/serving/releases/download/knative-v1.17.0/serving-hpa.yaml
+
+kubectl apply -f knative-deployment.yaml
+        service.serving.knative.dev/hello created
+
+kubectl get ksvc
+        NAME    URL                                        LATESTCREATED   LATESTREADY   READY   REASON
+        hello   http://hello.default.172.18.0.3.sslip.io   hello-00001     hello-00001   True  
+
+kubectl get pod -l serving.knative.dev/service=hello -w
+        NAME                                    READY   STATUS        RESTARTS   AGE
+        hello-00001-deployment-9dd664d9-k4ddm   2/2     Terminating   0          101s
+        hello-00001-deployment-9dd664d9-k4ddm   1/2     Terminating   0          2m1s
+        hello-00001-deployment-9dd664d9-k4ddm   0/2     Completed     0          2m8s
+        hello-00001-deployment-9dd664d9-k4ddm   0/2     Completed     0          2m10s
+        hello-00001-deployment-9dd664d9-k4ddm   0/2     Completed     0          2m10s
+
+kubectl get revisions
+        NAME          CONFIG NAME   GENERATION   READY   REASON   ACTUAL REPLICAS   DESIRED REPLICAS
+        hello-00001   hello         1            True             0                 0
+        hello-00002   hello         2            True             1                 1
+
+kubectl get ksvc
+        NAME    URL                                        LATESTCREATED   LATESTREADY   READY   REASON
+        hello   http://hello.default.172.18.0.3.sslip.io   hello-00002     hello-00002   True    
+
+curl -H "Host: hello.default.172.18.0.3.sslip.io" http://localhost:8081
+        Hello World!

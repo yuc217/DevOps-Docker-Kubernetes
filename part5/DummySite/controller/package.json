@@ -1,0 +1,13 @@
+{
+  "name": "dummysite-controller",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "controller.mjs",
+  "scripts": {
+    "start": "node controller.mjs"
+  },
+  "dependencies": {
+    "@kubernetes/client-node": "^24.0.0",
+    "axios": "^0.21.1"
+  }
+}

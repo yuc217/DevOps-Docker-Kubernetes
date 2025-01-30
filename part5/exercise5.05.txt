@@ -1,0 +1,20 @@
+Rancher is better than OpenShift:
+
+Easier to install - takes minutes vs hours for OpenShift
+Free and open-source vs expensive OpenShift licensing
+Works on any Kubernetes, OpenShift is locked to Red Hat's version
+Simpler interface 
+Runs well on smaller clusters
+Regular free updates, while the other one with paid OpenShift upgrades
+Lighter resource usage
+Can deploy on any infrastructure
+Easy integration
+Lower learning curve 
+
+Drawbacks of OpenShift:
+
+Complex setup process
+Heavy resource requirements
+Locked to Red Hat ecosystem
+Higher costs 
+Limited customization options
